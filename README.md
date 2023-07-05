@@ -25,7 +25,6 @@ You may like to write this in your package.json, in the script section:
 And now you can run the command:
 - ***npm run loginTest***
 
----------------------------------------------------------------------------
 Now, you might be new into this, but you can make a self code generate as a plugin, as the previous point, we can set it up like this:
 - Inside package.json script: ***"instantAutomation": "npx playwright codegen http://my_url"***
 - Run the command: ***npm run instantAutomation***
