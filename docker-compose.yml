@@ -1,0 +1,275 @@
+version: '3.5'
+services:
+
+    proxy:
+        container_name: arch_proxy
+        build:
+            context: ./proxy
+            dockerfile: Dockerfile
+        restart: always
+
+    mongo:
+        container_name: arch_mongo
+        image: mongo:4.4.10-focal
+        restart: always
+        volumes:
+            - ~/cbin/apps/arch/private/mongo/data:/data/db
+        healthcheck:
+            test: echo 'db.runCommand("ping").ok' | mongo mongo:27017/test --quiet
+            interval: 5s
+            timeout: 5s
+            retries: 5
+            start_period: 10s
+
+    mongo_express:
+        container_name: arch_mongo_express
+        image: mongo-express:1.0.0-alpha.4
+        restart: always
+        environment:
+            ME_CONFIG_MONGODB_SERVER: mongo
+            ME_CONFIG_SITE_BASEURL: /arch/api/mongo_express/
+            ME_CONFIG_BASICAUTH_USERNAME: soporte@cbin.mx
+            ME_CONFIG_BASICAUTH_PASSWORD: InDo2011.-
+        depends_on:
+            mongo:
+                condition: service_healthy
+
+    redis:
+        container_name: arch_redis
+        build:
+            context: ./redis
+            dockerfile: DockerFile
+        restart: always
+        volumes:
+            - ~/cbin/apps/arch/private/redis/data/:/data/
+
+    redis_insight:
+        container_name: arch_redis_insight
+        image: redislabs/redisinsight:oct-22-fixes
+        environment:
+            - RITRUSTEDORIGINS=http://0.0.0.0,https://0.0.0.0 
+            - RIPROXYENABLE=t
+            - RIPROXYPATH=/arch/api/redis_insight/
+
+    users:
+        container_name: arch_users
+        image: 205467237791.dkr.ecr.us-west-2.amazonaws.com/users:1.6.0
+        restart: always
+        volumes:
+            - ~/cbin/apps/arch/shared/users/:/app/data/
+            - ~/cbin/apps/arch/private/users/config/:/app/config/
+        environment:
+            TZ: America/Mexico_City
+        depends_on:
+            mongo:
+                condition: service_healthy
+
+    archivistica_ui:
+        container_name: arch_archivistica_ui
+        image: 205467237791.dkr.ecr.us-west-2.amazonaws.com/archivistica_ui:1.3.0
+        env_file:
+            - ./archivistica_ui/config/.env
+        restart: always
+        volumes:
+            - ~/cbin/apps/arch/shared/:/usr/share/nginx/html/assets/shared/:ro
+            - ~/cbin/apps/arch/pdf_templates/:/usr/share/nginx/html/assets/pdf_templates/
+            - ~/cbin/apps/arch/private/archivistica_ui/config/:/app/config/
+        command: ["/bin/sh","-c","envsubst < /usr/share/nginx/html/assets/env.template.js > /usr/share/nginx/html/assets/env.js && cp /usr/share/nginx/html/assets/default_pdf_templates/* /usr/share/nginx/html/assets/pdf_templates/ && exec nginx -g 'daemon off;'"]
+
+    staff:
+        container_name: arch_staff
+        image: 205467237791.dkr.ecr.us-west-2.amazonaws.com/staff:1.3.0
+        restart: always
+        volumes:
+            - ~/cbin/apps/arch/shared/staff:/app/data/
+            - ~/cbin/apps/arch/private/staff/config/:/app/config/
+        environment:
+            TZ: America/Mexico_City
+        depends_on:
+            mongo:
+                condition: service_healthy
+
+    companies:
+        container_name: arch_companies
+        image: 205467237791.dkr.ecr.us-west-2.amazonaws.com/companies:1.0.3
+        restart: always
+        volumes:
+            - ~/cbin/apps/arch/shared/companies/:/app/data/
+            - ~/cbin/apps/arch/private/companies/config/:/app/config/
+        extra_hosts:
+            - host.docker.internal:host-gateway
+        environment:
+            TZ: America/Mexico_City
+        depends_on:
+            mongo:
+                condition: service_healthy
+
+    permissions:
+        container_name: arch_permissions
+        image: 205467237791.dkr.ecr.us-west-2.amazonaws.com/permissions:1.4.0
+        restart: always
+        volumes:
+            - ~/cbin/apps/arch/shared/permissions/:/app/data/
+            - ~/cbin/apps/arch/private/permissions/config/:/app/config/
+        environment:
+            TZ: America/Mexico_City
+        depends_on:
+            mongo:
+                condition: service_healthy
+
+    profiles:
+        container_name: arch_profiles
+        image: 205467237791.dkr.ecr.us-west-2.amazonaws.com/profiles:1.3.0
+        restart: always
+        volumes:
+            - ~/cbin/apps/arch/shared/profiles/:/app/data/
+            - ~/cbin/apps/arch/private/profiles/config/:/app/config/
+        environment:
+            TZ: America/Mexico_City
+        depends_on:
+            mongo:
+                condition: service_healthy
+
+    updates:
+        container_name: arch_updates
+        image: 205467237791.dkr.ecr.us-west-2.amazonaws.com/updates:1.7.1
+        restart: always
+        volumes:
+            - ~/cbin/apps/arch/shared/updates/:/app/data/
+            - ~/cbin/apps/arch/private/updates/config/:/app/config/
+        extra_hosts:
+            - host.docker.internal:host-gateway
+        environment:
+            TZ: America/Mexico_City
+
+    notifications:
+        container_name: arch_notifications
+        image: 205467237791.dkr.ecr.us-west-2.amazonaws.com/notifications:1.4.0
+        restart: always
+        volumes:
+            - ~/cbin/apps/arch/private/notifications/config/:/app/config/
+            - ~/cbin/apps/arch/private/notifications/data/:/app/data/
+        extra_hosts:
+            - host.docker.internal:host-gateway
+        environment:
+            TZ: America/Mexico_City
+        depends_on:
+            mongo:
+                condition: service_healthy
+
+    processes:
+        container_name: arch_processes
+        image: 205467237791.dkr.ecr.us-west-2.amazonaws.com/processes:1.3.1
+        volumes:
+            - ~/cbin/apps/arch/shared/processes/:/app/data/
+            - ~/cbin/apps/arch/private/processes/config/:/app/config/
+        environment:
+            TZ: America/Mexico_City
+        depends_on:
+            mongo:
+                condition: service_healthy
+
+    classifications:
+        container_name: arch_classifications
+        image: 205467237791.dkr.ecr.us-west-2.amazonaws.com/classification:1.2.0
+        volumes:
+            - ~/cbin/apps/arch/shared/classifications/:/app/data/
+            - ~/cbin/apps/arch/private/classifications/config/config.json:/app/config/config.json
+        environment:
+            TZ: America/Mexico_City
+        depends_on:
+            mongo:
+                condition: service_healthy
+
+    documents_manager:
+        container_name: arch_documents_manager
+        image: 205467237791.dkr.ecr.us-west-2.amazonaws.com/documents_manager:0.11.1
+        volumes:
+            - ~/cbin/apps/arch/shared/documents_manager/:/app/data/
+            - ~/cbin/apps/arch/private/documents_manager/config/:/app/config/
+        environment:
+            TZ: America/Mexico_City
+        depends_on:
+            mongo:
+                condition: service_healthy
+
+    storage_coupler:
+        container_name: arch_storage_coupler
+        image: 205467237791.dkr.ecr.us-west-2.amazonaws.com/storage_coupler:1.6.5
+        privileged: true
+        volumes:
+            - ~/cbin/apps/arch/shared/storage_coupler/:/app/data/
+            - ~/cbin/apps/arch/private/storage_coupler/config/:/app/config/
+            - ~/cbin/apps/arch/private/storage_coupler/cache:/app/cache
+            - ~/cbin/apps/arch/private/storage_coupler/local_stg/:/app/local_stg/
+            - ~/cbin/apps/arch/private/storage_coupler/data_extractor:/app/private/data_extractor
+            - /dev/:/dev/
+            - /mnt/:/mnt/
+        extra_hosts:
+            - host.docker.internal:host-gateway
+        environment:
+            TZ: America/Mexico_City
+        depends_on:
+            mongo:
+                condition: service_healthy
+
+    marketplace:
+        container_name: arch_marketplace
+        image: 205467237791.dkr.ecr.us-west-2.amazonaws.com/marketplace:1.0.1
+        volumes:
+            - ~/cbin/apps/arch/shared/marketplace/:/app/data/
+            - ~/cbin/apps/arch/private/marketplace/config/:/app/config/
+        environment:
+            TZ: America/Mexico_City
+        depends_on:
+            mongo:
+                condition: service_healthy
+
+    logbook:
+        container_name: arch_logbook
+        image: 205467237791.dkr.ecr.us-west-2.amazonaws.com/logbook:1.2.0
+        volumes:
+            - ~/cbin/apps/arch/shared/logbook/:/app/data/
+            - ~/cbin/apps/arch/private/logbook/config/:/app/config/
+        environment:
+            TZ: America/Mexico_City
+        depends_on:
+            mongo:
+                condition: service_healthy
+
+    data_extractor:
+        container_name: arch_data_extractor
+        image: 205467237791.dkr.ecr.us-west-2.amazonaws.com/data_extractor:0.4.21
+        volumes:
+            - ~/cbin/apps/arch/shared/data_extractor/:/app/data/
+            - ~/cbin/apps/arch/private/data_extractor/config/:/app/config/
+            - ~/cbin/apps/arch/private/storage_coupler/data_extractor:/app/private
+        environment:
+            TZ: America/Mexico_City
+        depends_on:
+            mongo:
+                condition: service_healthy
+
+    pdf_reports:
+        container_name: arch_pdf_reports
+        image: 205467237791.dkr.ecr.us-west-2.amazonaws.com/pdf_reports:1.0.2
+        volumes:
+            - ~/cbin/apps/arch/shared/pdf_reports/:/app/data/
+            - ~/cbin/apps/arch/pdf_templates/:/app/templates/
+            - ~/cbin/apps/arch/private/pdf_reports/config/config.json:/app/config/config.json
+        environment:
+            TZ: America/Mexico_City
+        depends_on:
+            mongo:
+                condition: service_healthy
+            archivistica_ui:
+                condition: service_started
+
+    pw_test_e2e:
+        container_name: playwright_test_e2e
+        build: .
+        environment:
+            TZ: America/Mexico_City
+        depends_on:
+            archivistica_ui:
+                condition: service_started

@@ -1,0 +1,11 @@
+app/node_modules
+app/playwright-report
+app/screenshots
+app/test-results
+app/tests-examples/
+app/.env
+app/playwright/.cache/
+archivistica_ui/config/
+proxy/config
+proxy/ngx_upstream_jdomain
+redis/config/redis.conf

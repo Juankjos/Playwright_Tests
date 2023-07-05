@@ -1,0 +1,28 @@
+{
+  "name": "playwrigh_testing",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "instantAutomation": "npx playwright codegen http://my_url",
+    "loginTest": "npx playwright test arch-login.spec.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Juankjos/Playwrigh_testing.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Juankjos/Playwrigh_testing/issues"
+  },
+  "homepage": "https://github.com/Juankjos/Playwrigh_testing#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.35.1"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "playwright-cli": "^0.180.0"
+  }
+}
